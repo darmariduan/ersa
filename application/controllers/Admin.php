@@ -256,7 +256,7 @@ class Admin extends CI_Controller
                 $data1 = [
                     'nama' => $this->input->post('nama'),
                 ];
-                $this->db->where('email', $this->session->userdata('email'));
+                $this->db->where('user_id', $this->session->userdata('id_user'));
                 $this->db->update('admin', $data1);
 
                 $data2 = [
@@ -273,7 +273,6 @@ class Admin extends CI_Controller
             }
 
 
-
             echo json_encode($response);
         }
     }
@@ -281,42 +280,40 @@ class Admin extends CI_Controller
 
     public function change_photo()
     {
-        $data =  ['user' => $this->db->get_where('user', ['email' => $this->session->userdata('email')])->row_array()];
-        $file_name = $data['user']['id']  . time();
-        $config['upload_path'] = './assets/img/profile/';
-        $config['allowed_types'] = 'gif|jpg|png';
-        $config['max_size']  = '5600';
-        $config['file_name'] = $file_name;
+        if ($this->input->is_ajax_request() == true) {
+            $data =  ['user' => $this->db->get_where('user', ['email' => $this->session->userdata('email')])->row_array()];
+            $file_name = $data['user']['id']  . time();
+            $config['upload_path'] = './assets/img/profile/';
+            $config['allowed_types'] = 'gif|jpg|png';
+            $config['max_size']  = '5600';
+            $config['file_name'] = $file_name;
 
-        $this->upload->initialize($config);
+            $this->upload->initialize($config);
 
-        if ($this->upload->do_upload('image')) {
+            if ($this->upload->do_upload('image')) {
 
-            $old_image = $data['user']['image'];
-            if ($old_image != 'default.jpg') {
-                unlink(FCPATH . 'assets/img/profile/' . $old_image);
+                $old_image = $data['user']['image'];
+                if ($old_image != 'default.jpg') {
+                    unlink(FCPATH . 'assets/img/profile/' . $old_image);
+                }
+                $upload = array('uploads' => $this->upload->data());
+                $datas = [
+                    'image' => $upload['uploads']['file_name'],
+                ];
+
+                $this->db->where('email', $this->session->userdata('email'));
+                $this->db->update('user', $datas);
+                $response = array(
+                    'sukses' => 'Foto Berhasil Di Ubah',
+                );
+            } else {
+
+
+                $response = array(
+                    'error' => $this->upload->display_errors(),
+                );
             }
-            $upload = array('uploads' => $this->upload->data());
-            $datas = [
-                'image' => $upload['uploads']['file_name']
-            ];
-
-            $this->db->where('email', $this->session->userdata('email'));
-            $this->db->update('user', $datas);
-            $this->session->set_flashdata('image', 'Foto Berhasil di ubah');
-
-            redirect('admin/profile', 'refresh');
-        } else {
-            $data = [
-                'title' => 'Profile',
-                'user' => $this->m_admin->get_profile(),
-                'eror' => $this->upload->display_errors(),
-            ];
-            $this->load->view('dashboard/layout/header', $data);
-            $this->load->view('dashboard/layout/navbar', $data);
-            $this->load->view('dashboard/layout/sidebar', $data);
-            $this->load->view('dashboard/admin/profile', $data);
-            $this->load->view('dashboard/layout/footer', $data);
+            echo json_encode($response);
         }
     }
 }

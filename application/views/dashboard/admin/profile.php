@@ -4,6 +4,12 @@ if ($this->session->flashdata('image')) { ?>
     </div>
 
 <?php } ?>
+<?php
+if ($this->session->flashdata('image-eror')) { ?>
+    <div id="eror-image" data-eror="<?= $this->session->flashdata('image-eror') ?>">
+    </div>
+
+<?php } ?>
 
 
 <main id="main" class="main">
@@ -279,14 +285,43 @@ if ($this->session->flashdata('image')) { ?>
         });
 
         $('#form-image').submit(function(e) {
-
+            e.preventDefault();
+            var formdata = new FormData(this);
             $.ajax({
                 type: "POST",
                 url: "<?= base_url('admin/change_photo') ?>",
-                data: new FormData(this),
+                data: formdata,
                 dataType: "JSON",
+                async: false,
+                cache: false,
+                contentType: false,
+                processData: false,
                 success: function(response) {
+                    if (response.sukses) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Foto Berhasil Diubah',
+                            showConfirmButton: true,
 
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location = "<?= base_url('admin/profile') ?>"
+                            }
+                        });
+                        $('#form-image')[0].reset();
+                        $("#eror-image").html(response.eror).hide();
+                    } else {
+
+                        // window.alert(response.error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: response.error,
+                            showConfirmButton: true,
+
+                        });
+
+
+                    }
                 },
                 error: {
                     function(xhr, ajaxOptions, thrownError) {
@@ -300,11 +335,20 @@ if ($this->session->flashdata('image')) { ?>
     });
 
     const profil = $('#edit-image').data('profil');
+    const eror = $('#eror-image').data('eror');
 
     if (profil) {
         Swal.fire({
             icon: 'success',
             title: profil,
+            timer: 1500, // Waktu dalam milidetik sebelum SweetAlert tertutup secara otomatis
+            showConfirmButton: false
+        })
+    }
+    if (eror) {
+        Swal.fire({
+            icon: 'error',
+            title: eror,
             timer: 1500, // Waktu dalam milidetik sebelum SweetAlert tertutup secara otomatis
             showConfirmButton: false
         })
